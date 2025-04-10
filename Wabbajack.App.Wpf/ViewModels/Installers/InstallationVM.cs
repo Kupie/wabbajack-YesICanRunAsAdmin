@@ -774,35 +774,6 @@ public class InstallationVM : ProgressViewModel, ICpuStatusVM
                         break;
                     case GameFileSource gameFile:
                         writer.Write($"<h3>{archive.Name} (Game File)</h3>");
-                        if(archive.Name.Contains("CreationKit"))
-                        {
-                            writer.Write($"<p>This modlist requires the Creation Kit to function.</p>");
-                            if (ModList.GameType == Game.SkyrimSpecialEdition || ModList.GameType == Game.SkyrimVR)
-                            {
-                                writer.Write(@$"<p><a href=""steam://run/1946180"">Click here to install it via Steam.</a></p>");
-                            }
-                            else if(ModList.GameType == Game.Fallout4 || ModList.GameType == Game.Fallout4VR)
-                            {
-                                writer.Write(@$"<p><a href=""steam://run/1946160"">Click here to install it via Steam.</a></p>");
-                            }
-                            else if(ModList.GameType == Game.Starfield)
-                            {
-                                writer.Write(@$"<p><a href=""steam://run/2722710"">Click here to install it via Steam.</a></p>");
-                            }
-                        }
-                        else if(ModList.GameType == Game.SkyrimSpecialEdition && archive.Name.Contains("curios", StringComparison.OrdinalIgnoreCase))
-                        {
-                            writer.Write("<p>This is a game file that commonly causes issues.</p>");
-                            writer.Write(@"<p><a target='_blank' href='https://wiki.wabbajack.org/user_documentation/Troubleshooting%20FAQ.html#unable-to-download-curios-files'>Click here for more information on how to resolve the issue.</a></p>");
-                        }
-                        else if(ModList.GameType == Game.SkyrimSpecialEdition && archive.Name.StartsWith("Data_cc", StringComparison.OrdinalIgnoreCase))
-                        {
-                            writer.Write("<p>This is a Creation Club file that could not be found. Check if the Anniversary Edition DLC is installed before installing this modlist, and validate you have the same version as the one the modlist author has.</p>");
-                        }
-                        else
-                        {
-                            writer.Write("<p>This is a game file that could not be found. Validate the game is installed properly in the same language as that of the modlist author.</p>");
-                        }
                         break;
 
                     case Mega mega:
