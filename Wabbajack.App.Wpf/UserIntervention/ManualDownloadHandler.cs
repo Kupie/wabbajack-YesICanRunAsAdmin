@@ -29,6 +29,53 @@ public class ManualDownloadHandler : BrowserWindowViewModel
                 await RunJavaScript("Array.from(document.getElementsByTagName(\"iframe\")).forEach(f => {if (f.title != \"SP Consent Message\" && !f.src.includes(\"challenges.cloudflare.com\")) f.remove()})");
             });
             await NavigateTo(md.Url);
+
+            await RunJavaScript(@"
+                (function() {
+                    function findAndClickButton() {
+                        // Try finding by ID first
+                        var slowButton = document.getElementById('slowDownloadButton');
+                        
+                        // If not found by ID, try finding by text content
+                        if (!slowButton) {
+                            var buttons = document.querySelectorAll('button');
+                            for (var i = 0; i < buttons.length; i++) {
+                                if (buttons[i].innerText.trim().toLowerCase() === 'slow download' || 
+                                    buttons[i].textContent.trim().toLowerCase() === 'slow download' ||
+                                    buttons[i].querySelector('span') && buttons[i].querySelector('span').textContent.trim().toLowerCase() === 'slow download') {
+                                    slowButton = buttons[i];
+                                    console.log('Found slow download button by text');
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (!slowButton) {
+                            console.log('Slow download button not found, retrying in 500ms');
+                            setTimeout(findAndClickButton, 500);
+                            return;
+                        }
+                        
+                        // Scroll the button into view
+                        slowButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        
+                        // Wait a moment for the scroll to complete
+                        setTimeout(function() {
+                            // Click the button
+                            console.log('Clicking slow download button');
+                            slowButton.click();
+                            
+                            // Close the window after clicking
+                            setTimeout(function() {
+                                window.close();
+                            }, 2000);
+                        }, 1000);
+                    }
+                    
+                    // Start the process
+                    findAndClickButton();
+                })();");
+                
             uri = await task;
         }
         finally
