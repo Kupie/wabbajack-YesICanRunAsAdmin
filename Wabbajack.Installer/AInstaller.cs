@@ -1,3 +1,4 @@
+// See docs/game_file_validation_fix.md for information about the null VirtualFile fix
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -234,6 +235,7 @@ public abstract class AInstaller<T>
                     throw;
                 }
             })
+            .Where(a => a.VF != null) // Filter out null VirtualFile references
             .GroupBy(a => a.VF)
             .ToDictionary(a => a.Key);
 
