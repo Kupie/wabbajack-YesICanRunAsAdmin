@@ -6,3 +6,4 @@ obj
 .\packages\*
 /VERSION.txt
 *.opencover.xml
+.cursor
