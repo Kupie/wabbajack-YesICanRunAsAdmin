@@ -28,4 +28,4 @@ echo Copying launcher to main directory...
 copy "%OUTPUT_DIR%\launcher\Wabbajack.exe" "%OUTPUT_DIR%\Wabbajack.exe"
 
 echo Build complete!
-echo All files are located in: %OUTPUT_DIR%
+echo Exe file located in: %OUTPUT_DIR%\app\Wabbajack.exe
