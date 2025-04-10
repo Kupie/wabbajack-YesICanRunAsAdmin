@@ -249,7 +249,7 @@ public class MainWindowViewModel : ViewModelBase
         try
         {
             var entryPoint = KnownFolders.EntryPoint;
-            if (KnownFolders.IsInSpecialFolder(entryPoint) || entryPoint.Depth <= 1)
+            if (KnownFolders.IsInSpecialFolder(entryPoint, out var specialFolder) || entryPoint.Depth <= 1)
             {
                 var msg = MsBox.Avalonia.MessageBoxManager
                     .GetMessageBoxStandard(new MessageBoxStandardParams()
@@ -337,9 +337,9 @@ public class MainWindowViewModel : ViewModelBase
             var data = $"\"{filename}\" %*";
             var file = Path.Combine(Directory.GetCurrentDirectory(), "wabbajack-cli.bat");
             if (File.Exists(file) && await File.ReadAllTextAsync(file) == data) return;
-            var parent = Directory.GetParent(file).FullName;
-            if (!Directory.Exists(file))
-                Directory.CreateDirectory(parent);
+            var parentDir = Directory.GetParent(file);
+            if (parentDir != null && !Directory.Exists(parentDir.FullName))
+                Directory.CreateDirectory(parentDir.FullName);
             await File.WriteAllTextAsync(file, data);
         }
         catch (Exception ex)

@@ -102,7 +102,7 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
 
     private readonly Client _wjClient;
     private readonly ILogger<ModListGalleryVM> _logger;
-    private readonly GameLocator _locator;
+    private readonly IGameLocator _locator;
     private readonly ModListDownloadMaintainer _maintainer;
     private readonly SettingsManager _settingsManager;
     private readonly CancellationToken _cancellationToken;
@@ -113,7 +113,7 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
     public FilePickerVM LocalFilePicker { get; set; }
     public ICommand LoadLocalFileCommand { get; set; }
 
-    public ModListGalleryVM(ILogger<ModListGalleryVM> logger, Client wjClient, GameLocator locator,
+    public ModListGalleryVM(ILogger<ModListGalleryVM> logger, Client wjClient, IGameLocator locator,
         SettingsManager settingsManager, ModListDownloadMaintainer maintainer, CancellationToken cancellationToken, IServiceProvider serviceProvider)
         : base(logger)
     {

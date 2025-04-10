@@ -30,6 +30,9 @@ public partial class InstallationView : ReactiveUserControl<InstallationVM>
 
             this.Bind(ViewModel, vm => vm.Installer.DownloadLocation, view => view.DownloadLocationPicker.PickerVM)
                 .DisposeWith(disposables);
+                
+            this.Bind(ViewModel, vm => vm.GameFolderLocation, view => view.GameFolderPicker.PickerVM)
+                .DisposeWith(disposables);
 
             InstallationLocationPicker.PickerVM.AdditionalError = ViewModel.WhenAnyValue(vm => vm.ValidationResult).Where(vr => vr is InstallPathValidationResult);
             DownloadLocationPicker.PickerVM.AdditionalError = ViewModel.WhenAnyValue(vm => vm.ValidationResult).Where(vr => vr is DownloadsPathValidationResult);

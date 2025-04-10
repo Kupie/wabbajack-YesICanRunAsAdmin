@@ -65,6 +65,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
@@ -83,7 +84,21 @@
                                       IsEnabled="{Binding LoadingLock.IsNotLoading}"/>
                 </StackPanel>
 
-                <StackPanel x:Name="DownloadLocationPanel" Grid.Row="1" Style="{StaticResource Panel}">
+                <StackPanel x:Name="GameFolderLocationPanel" Grid.Row="1" Style="{StaticResource Panel}">
+                    <TextBlock Style="{StaticResource TitleStyle}" Text="Game Folder" />
+                    <TextBlock Style="{StaticResource DescriptionStyle}">
+                        The folder where the game is installed.<LineBreak />
+                        This is usually found in your Steam or other game launcher library folder.
+                        The folder should contain the game executable and data files.
+                    </TextBlock>
+                    <local:FilePicker x:Name="GameFolderPicker"
+                                      Style="{StaticResource PickerStyle}"
+                                      Icon="Folder"
+                                      ToolTip="Path to the folder where the game is installed"
+                                      IsEnabled="{Binding LoadingLock.IsNotLoading}" />
+                </StackPanel>
+
+                <StackPanel x:Name="DownloadLocationPanel" Grid.Row="2" Style="{StaticResource Panel}">
                     <TextBlock Style="{StaticResource TitleStyle}" Text="Downloads Location" />
                     <TextBlock Style="{StaticResource DescriptionStyle}">
                         The folder where the downloads will be stored.<LineBreak />
@@ -97,7 +112,7 @@
                                       IsEnabled="{Binding LoadingLock.IsNotLoading}" />
                 </StackPanel>
 
-                <Grid Grid.Row="3">
+                <Grid Grid.Row="4">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />

@@ -63,6 +63,7 @@ public class InstallationVM : ProgressViewModel, ICpuStatusVM
     [Reactive] public ModList ModList { get; set; }
     [Reactive] public ModlistMetadata ModlistMetadata { get; set; }
     [Reactive] public FilePickerVM WabbajackFileLocation { get; set; }
+    [Reactive] public FilePickerVM GameFolderLocation { get; set; }
     [Reactive] public MO2InstallerVM Installer { get; set; }
     [Reactive] public StandardInstaller StandardInstaller { get; set; }
     [Reactive] public BitmapImage ModListImage { get; set; }
@@ -194,6 +195,13 @@ public class InstallationVM : ProgressViewModel, ICpuStatusVM
         };
         WabbajackFileLocation.Filters.Add(new CommonFileDialogFilter("Wabbajack modlist", "*.wabbajack"));
         
+        GameFolderLocation = new FilePickerVM
+        {
+            ExistCheckOption = FilePickerVM.CheckOptions.On,
+            PathType = FilePickerVM.PathTypeOptions.Folder,
+            PromptTitle = "Select the game folder"
+        };
+        
         OpenLogFolderCommand = ReactiveCommand.Create(() =>
         {
             UIUtils.OpenFolderAndSelectFile(_configuration.LogLocation.Combine("Wabbajack.current.log"));
@@ -272,14 +280,16 @@ public class InstallationVM : ProgressViewModel, ICpuStatusVM
             */
             
             this.WhenAny(vm => vm.WabbajackFileLocation.ValidationResult)
-                .CombineLatest<ValidationResult, ValidationResult, ValidationResult, AbsolutePath, AbsolutePath, AbsolutePath>(this.WhenAny(vm => vm.Installer.DownloadLocation.ValidationResult),
+                .CombineLatest<ValidationResult, ValidationResult, ValidationResult, ValidationResult, AbsolutePath, AbsolutePath, AbsolutePath, AbsolutePath>(
+                    this.WhenAny(vm => vm.Installer.DownloadLocation.ValidationResult),
                     this.WhenAny(vm => vm.Installer.Location.ValidationResult),
                     this.WhenAny(vm => vm.WabbajackFileLocation.TargetPath),
                     this.WhenAny(vm => vm.Installer.Location.TargetPath),
-                    this.WhenAny(vm => vm.Installer.DownloadLocation.TargetPath))
+                    this.WhenAny(vm => vm.Installer.DownloadLocation.TargetPath),
+                    this.WhenAny(vm => vm.GameFolderLocation.TargetPath))
                 .Select(t =>
                 {
-                    var errors = (new[] { t.First, t.Second, t.Third})
+                    var errors = (new[] { t.First, t.Second, t.Third, t.Fourth})
                         .Where(t => t.Failed)
                         .Concat(Validate())
                         .ToArray();
@@ -381,6 +391,12 @@ public class InstallationVM : ProgressViewModel, ICpuStatusVM
     {
         if (!WabbajackFileLocation.TargetPath.FileExists())
             yield return ValidationResult.Fail("Wabbajack modlist file does not exist");
+            
+        var gamePath = GameFolderLocation.TargetPath;
+        if (gamePath.Depth <= 1)
+            yield return ValidationResult.Fail("Please specify a game folder location");
+        if (!gamePath.DirectoryExists())
+            yield return ValidationResult.Fail("The specified game folder does not exist");
 
         var downloadPath = Installer.DownloadLocation.TargetPath;
         if (downloadPath.Depth <= 1)
@@ -620,6 +636,12 @@ public class InstallationVM : ProgressViewModel, ICpuStatusVM
 
             try
             {
+                // Set the game location in the locator
+                if (_gameLocator is UserSpecifiedGameLocator userLocator)
+                {
+                    userLocator.SetGameLocation(GameFolderLocation.TargetPath);
+                }
+                
                 var cfg = new InstallerConfiguration
                 {
                     Game = ModList.GameType,
@@ -628,7 +650,7 @@ public class InstallationVM : ProgressViewModel, ICpuStatusVM
                     ModList = ModList,
                     ModlistArchive = WabbajackFileLocation.TargetPath,
                     SystemParameters = _parametersConstructor.Create(),
-                    GameFolder = _gameLocator.GameLocation(ModList.GameType)
+                    GameFolder = GameFolderLocation.TargetPath
                 };
                 StandardInstaller = StandardInstaller.Create(_serviceProvider, cfg);
 
