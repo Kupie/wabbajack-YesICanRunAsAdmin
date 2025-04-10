@@ -56,8 +56,16 @@ public class ManualDownloadHandler : BrowserWindowViewModel
                             return;
                         }
                         
-                        // Scroll the button into view
+                        // First make sure the button is visible
                         slowButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        
+                        // Force center the button in the viewport using calculated positions
+                        var rect = slowButton.getBoundingClientRect();
+                        var buttonMiddle = rect.top + rect.height / 2;
+                        var viewportHeight = window.innerHeight;
+                        var scrollY = window.scrollY + buttonMiddle - viewportHeight / 2;
+                        window.scrollTo({ top: scrollY, behavior: 'smooth' });
+                        console.log('Centering button at position:', scrollY);
                         
                         // Wait a moment for the scroll to complete
                         setTimeout(function() {
