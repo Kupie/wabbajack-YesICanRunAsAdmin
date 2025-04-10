@@ -283,6 +283,7 @@ public class InstallationVM : ProgressViewModel, ICpuStatusVM
                 .CombineLatest<ValidationResult, ValidationResult, ValidationResult, ValidationResult, AbsolutePath, AbsolutePath, AbsolutePath, AbsolutePath>(
                     this.WhenAny(vm => vm.Installer.DownloadLocation.ValidationResult),
                     this.WhenAny(vm => vm.Installer.Location.ValidationResult),
+                    this.WhenAny(vm => vm.GameFolderLocation.ValidationResult),
                     this.WhenAny(vm => vm.WabbajackFileLocation.TargetPath),
                     this.WhenAny(vm => vm.Installer.Location.TargetPath),
                     this.WhenAny(vm => vm.Installer.DownloadLocation.TargetPath),
