@@ -13,7 +13,7 @@
     ShowCloseButton="False"
     ShowMinButton="False"
     ShowMaxRestoreButton="False"
-    Title="Wabbajack"
+    Title="Wabbajack UNLOCKED"
     Width="1441"
     Height="695"
     MinWidth="1100"
@@ -181,7 +181,6 @@
             </Border>
         </Grid>
     </Grid>
-
     <mahapps:MetroWindow.RightWindowCommands>
         <mahapps:WindowCommands>
             <mahapps:WindowCommands.Resources>
