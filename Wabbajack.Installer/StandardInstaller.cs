@@ -125,7 +125,9 @@ public class StandardInstaller : AInstaller<StandardInstaller>
         if (token.IsCancellationRequested) return InstallResult.Cancelled;
 
         var missing = ModList.Archives.Where(a => !HashedArchives.ContainsKey(a.Hash)).ToList();
-        if (missing.Count > 0)
+        var missingNonGameFiles = missing.Where(a => !(a.State is GameFileSource)).ToList();
+        
+        if (missingNonGameFiles.Count > 0)
         {
             foreach (var a in missing)
                 _logger.LogCritical("Unable to download {name} ({primaryKeyString})", a.Name,
@@ -133,6 +135,12 @@ public class StandardInstaller : AInstaller<StandardInstaller>
             _logger.LogCritical("Cannot continue, was unable to download one or more archives");
 
             return InstallResult.DownloadFailed;
+        }
+        else if (missing.Count > 0)
+        {
+            // Log missing game files but continue
+            foreach (var a in missing)
+                _logger.LogWarning("Missing game file {name}. This could be caused by missing DLC or a modified installation, but installation will continue.", a.Name);
         }
 
         await ExtractModlist(token);
