@@ -16,13 +16,13 @@ echo Cleaning solution...
 dotnet clean
 
 echo Building main application...
-dotnet publish Wabbajack.App.Wpf\Wabbajack.App.Wpf.csproj --framework "net9.0-windows" --runtime win-x64 --configuration Release /p:Platform=x64 -o "%OUTPUT_DIR%\app" /p:IncludeNativeLibrariesForSelfExtract=true --self-contained /p:DebugType=embedded 
+dotnet publish Wabbajack.App.Wpf\Wabbajack.App.Wpf.csproj --framework "net9.0-windows" --runtime win-x64 --configuration Release /p:Platform=x64 -o "%OUTPUT_DIR%\app" /p:IncludeNativeLibrariesForSelfExtract=true --self-contained /p:DebugType=none /p:DebugSymbols=false
 
 echo Building launcher...
-dotnet publish Wabbajack.Launcher\Wabbajack.Launcher.csproj --framework "net9.0-windows" --runtime win-x64 --configuration Release /p:Platform=x64 -o "%OUTPUT_DIR%\launcher" /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true --self-contained /p:DebugType=embedded
+dotnet publish Wabbajack.Launcher\Wabbajack.Launcher.csproj --framework "net9.0-windows" --runtime win-x64 --configuration Release /p:Platform=x64 -o "%OUTPUT_DIR%\launcher" /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true --self-contained /p:DebugType=none /p:DebugSymbols=false
 
 echo Building CLI...
-dotnet publish Wabbajack.CLI\Wabbajack.CLI.csproj --framework "net9.0-windows" --runtime win-x64 --configuration Release /p:Platform=x64 -o "%OUTPUT_DIR%\app\cli" /p:IncludeNativeLibrariesForSelfExtract=true --self-contained /p:DebugType=embedded
+dotnet publish Wabbajack.CLI\Wabbajack.CLI.csproj --framework "net9.0-windows" --runtime win-x64 --configuration Release /p:Platform=x64 -o "%OUTPUT_DIR%\app\cli" /p:IncludeNativeLibrariesForSelfExtract=true --self-contained /p:DebugType=none /p:DebugSymbols=false
 
 echo Copying launcher to main directory...
 copy "%OUTPUT_DIR%\launcher\Wabbajack.exe" "%OUTPUT_DIR%\Wabbajack.exe"
