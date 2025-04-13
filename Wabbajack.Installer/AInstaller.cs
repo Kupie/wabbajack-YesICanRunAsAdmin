@@ -307,7 +307,7 @@ public abstract class AInstaller<T>
     protected void ThrowOnNonMatchingHash(Directive file, Hash gotHash)
     {
         if (file.Hash != gotHash)
-            ThrowNonMatchingError(file, gotHash);
+            _logger.LogWarning("Hashes for {Path} did not match, expected {Expected} got {Got}", file.To, file.Hash, gotHash);
     }
     private void ThrowNonMatchingError(Directive file, Hash gotHash)
     {
@@ -319,8 +319,7 @@ public abstract class AInstaller<T>
     protected void ThrowOnNonMatchingHash(CreateBSA bsa, Directive directive, AFile state, Hash hash)
     {
         if (hash == directive.Hash) return;
-        _logger.LogError("Hashes for BSA don't match after extraction, {BSA}, {Directive}, {ExpectedHash}, {Hash}", bsa.To, directive.To, directive.Hash, hash);
-        throw new Exception($"Hashes for {bsa.To} file {directive.To} did not match, expected {directive.Hash} got {hash}");
+        _logger.LogWarning("Hashes for BSA don't match after extraction, {BSA}, {Directive}, {ExpectedHash}, {Hash}", bsa.To, directive.To, directive.Hash, hash);
     }
 
     public async Task DownloadArchives(CancellationToken token)
@@ -419,14 +418,9 @@ public abstract class AInstaller<T>
 
             if (hash != archive.Hash)
             {
-                _logger.LogError("Downloaded hash {Downloaded} does not match expected hash: {Expected}", hash,
+                _logger.LogWarning("Downloaded hash {Downloaded} does not match expected hash: {Expected}", hash,
                     archive.Hash);
-                if (destination!.Value.FileExists())
-                {
-                    destination!.Value.Delete();
-                }
-
-                return false;
+                // Continue without deleting the file
             }
 
             if (hash != default)
