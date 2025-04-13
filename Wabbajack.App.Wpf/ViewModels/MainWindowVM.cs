@@ -190,7 +190,7 @@ public class MainWindowVM : ViewModel
             _logger.LogInformation("    Assembly Location: {AssemblyLocation}", assemblyLocation);
             _logger.LogInformation("    Process Location: {ProcessLocation}", processLocation);
 
-            WindowTitle = "Wabbajack UNLOCKED";
+            WindowTitle = "Wabbajack UNLOCKED v2.1";
 
             _logger.LogInformation("General information:");
             _logger.LogInformation("    Windows version: {Version}", Environment.OSVersion.VersionString);
