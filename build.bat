@@ -2,7 +2,7 @@
 echo Building Wabbajack-Unlocked...
 
 REM Create temporary directory for build output
-SET OUTPUT_DIR=%TEMP%\wabbajack-unlocked-build
+SET OUTPUT_DIR=c:\tmp\publish-wj
 echo Output directory: %OUTPUT_DIR%
 
 REM Clean up previous build if it exists
