@@ -15,7 +15,7 @@
     ShowMaxRestoreButton="False"
     Title="Wabbajack UNLOCKED v2.1"
     Width="1441"
-    Height="695"
+    Height="720"
     MinWidth="1100"
     MinHeight="500"
     Closing="Window_Closing"
