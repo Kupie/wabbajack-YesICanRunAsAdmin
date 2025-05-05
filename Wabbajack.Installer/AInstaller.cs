@@ -307,7 +307,17 @@ public abstract class AInstaller<T>
     protected void ThrowOnNonMatchingHash(Directive file, Hash gotHash)
     {
         if (file.Hash != gotHash)
-            _logger.LogWarning("Hashes for {Path} did not match, expected {Expected} got {Got}", file.To, file.Hash, gotHash);
+        {
+            var installer = this as StandardInstaller;
+            if (installer?.IgnoreHashMismatches == true)
+            {
+                _logger.LogWarning("Ignoring hash mismatch for {Path}, expected {Expected} got {Got}", file.To, file.Hash, gotHash);
+            }
+            else
+            {
+                _logger.LogWarning("Hashes for {Path} did not match, expected {Expected} got {Got}", file.To, file.Hash, gotHash);
+            }
+        }
     }
     private void ThrowNonMatchingError(Directive file, Hash gotHash)
     {
@@ -319,7 +329,16 @@ public abstract class AInstaller<T>
     protected void ThrowOnNonMatchingHash(CreateBSA bsa, Directive directive, AFile state, Hash hash)
     {
         if (hash == directive.Hash) return;
-        _logger.LogWarning("Hashes for BSA don't match after extraction, {BSA}, {Directive}, {ExpectedHash}, {Hash}", bsa.To, directive.To, directive.Hash, hash);
+        
+        var installer = this as StandardInstaller;
+        if (installer?.IgnoreHashMismatches == true)
+        {
+            _logger.LogWarning("Ignoring BSA hash mismatch after extraction, {BSA}, {Directive}, {ExpectedHash}, {Hash}", bsa.To, directive.To, directive.Hash, hash);
+        }
+        else
+        {
+            _logger.LogWarning("Hashes for BSA don't match after extraction, {BSA}, {Directive}, {ExpectedHash}, {Hash}", bsa.To, directive.To, directive.Hash, hash);
+        }
     }
 
     public async Task DownloadArchives(CancellationToken token)
@@ -451,6 +470,28 @@ public abstract class AInstaller<T>
         NextStep(Consts.StepHashing, "Hashing Archives", 0);
         _logger.LogInformation("Looking for files to hash");
 
+        var installer = this as StandardInstaller;
+        var ignoreHashes = installer?.IgnoreHashMismatches == true;
+
+        if (ignoreHashes)
+        {
+            _logger.LogInformation("Ignore Hash Mismatches is enabled - will attempt to match files by name first");
+            
+            // First try to match by filename in the downloads folder
+            var downloadFiles = _configuration.Downloads.EnumerateFiles().ToList();
+            var archivesByName = ModList.Archives.ToDictionary(a => a.Name, a => a);
+            
+            foreach (var file in downloadFiles)
+            {
+                if (archivesByName.TryGetValue(file.FileName.ToString(), out var archive))
+                {
+                    _logger.LogInformation("Found existing file by name: {FileName} - assuming it matches archive: {ArchiveName}", 
+                        file.FileName.ToString(), archive.Name);
+                    HashedArchives[archive.Hash] = file;
+                }
+            }
+        }
+
         var allFiles = _configuration.Downloads.EnumerateFiles()
             .Concat(_gameLocator.GameLocation(_configuration.Game).EnumerateFiles())
             .ToList();
@@ -461,13 +502,13 @@ public abstract class AInstaller<T>
             .ToDictionary(g => g.Key, g => g.Select(v => v.x));
 
         _logger.LogInformation("Linking archives to downloads");
-        var toHash = ModList.Archives.Where(a => hashDict.ContainsKey(a.Size))
+        var toHash = ModList.Archives.Where(a => !HashedArchives.ContainsKey(a.Hash) && hashDict.ContainsKey(a.Size))
             .SelectMany(a => hashDict[a.Size]).ToList();
 
         MaxStepProgress = toHash.Count;
 
-        _logger.LogInformation("Found {count} total files, {hashedCount} matching filesize", allFiles.Count,
-            toHash.Count);
+        _logger.LogInformation("Found {count} total files, {hashedCount} matching filesize, {remainingCount} remaining to hash", 
+            allFiles.Count, toHash.Count, ModList.Archives.Count(a => !HashedArchives.ContainsKey(a.Hash)));
 
         var hashResults = await
             toHash
@@ -478,12 +519,24 @@ public abstract class AInstaller<T>
                 })
                 .ToList();
 
-        HashedArchives = hashResults
+        HashedArchives = HashedArchives.Concat(hashResults
             .OrderByDescending(e => e.Item2.LastModified())
             .GroupBy(e => e.Item1)
             .Select(e => e.First())
             .Where(x => x.Item1 != default)
-            .ToDictionary(kv => kv.Item1, kv => kv.e);
+            .ToDictionary(kv => kv.Item1, kv => kv.e)
+        ).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+        
+        // List any archives we still haven't found
+        var missingArchives = ModList.Archives.Where(a => !HashedArchives.ContainsKey(a.Hash)).ToList();
+        if (missingArchives.Any())
+        {
+            _logger.LogInformation("Still missing {count} archives after hashing", missingArchives.Count);
+            foreach (var archive in missingArchives.Take(10)) // Only log the first 10 to avoid spam
+            {
+                _logger.LogInformation("Missing archive: {ArchiveName}, Hash: {Hash}", archive.Name, archive.Hash);
+            }
+        }
     }
 
 

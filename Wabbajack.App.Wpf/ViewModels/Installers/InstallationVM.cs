@@ -123,6 +123,8 @@ public class InstallationVM : ProgressViewModel, ICpuStatusVM
     [Reactive] public string ExtractingSpeed { get; set; }
     [Reactive] public string DownloadingSpeed { get; set; }
     
+    [Reactive] public bool IgnoreHashMismatches { get; set; }
+    
     // Command properties
     public ICommand OpenManifestCommand { get; }
     public ICommand OpenReadmeCommand { get; }
@@ -323,6 +325,13 @@ public class InstallationVM : ProgressViewModel, ICpuStatusVM
             this.WhenAnyValue(vm => vm.Installer.Location.TargetPath)
                 .Select(x => x.PathParts.Any() ? x.Combine("downloads") : x)
                 .Subscribe(x => Installer.DownloadLocation.TargetPath = x)
+                .DisposeWith(disposables);
+                
+            this.WhenAnyValue(vm => vm.IgnoreHashMismatches)
+                .Subscribe(ignore => {
+                    if (StandardInstaller != null)
+                        StandardInstaller.SetIgnoreHashMismatches(ignore);
+                })
                 .DisposeWith(disposables);
         });
 
@@ -654,7 +663,7 @@ public class InstallationVM : ProgressViewModel, ICpuStatusVM
                     GameFolder = GameFolderLocation.TargetPath
                 };
                 StandardInstaller = StandardInstaller.Create(_serviceProvider, cfg);
-
+                StandardInstaller.SetIgnoreHashMismatches(IgnoreHashMismatches);
 
                 StandardInstaller.OnStatusUpdate = update =>
                 {

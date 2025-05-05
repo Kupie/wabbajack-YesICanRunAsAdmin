@@ -111,6 +111,12 @@
                                       ToolTip="Path to the folder where the mod archives will be downloaded to"
                                       IsEnabled="{Binding LoadingLock.IsNotLoading}" />
                 </StackPanel>
+                
+                <CheckBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" 
+                          Content="Ignore Hash Mismatches" 
+                          ToolTip="When enabled, the installer will continue even if files don't match expected hashes. Use this option if you're experiencing hash errors with valid files."
+                          IsChecked="{Binding IgnoreHashMismatches}"
+                          Margin="0,5,0,16"/>
 
                 <Grid Grid.Row="4">
                     <Grid.RowDefinitions>
