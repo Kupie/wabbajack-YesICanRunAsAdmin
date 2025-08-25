@@ -69,7 +69,9 @@ public class MainWindowViewModel : ViewModelBase
 
                 StatusHistory.Add(s);
             });
-        var tsk = CheckForUpdates();
+        // Disabled update checking for Wabbajack Unlocked fork
+        // var tsk = CheckForUpdates();
+        var tsk = FinishAndExit();
     }
 
     [Reactive] ObservableCollection<string> StatusHistory { get; set; } = new ObservableCollection<string>();
