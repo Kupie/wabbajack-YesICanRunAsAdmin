@@ -64,8 +64,6 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
 
     [Reactive] public string Search { get; set; }
 
-    [Reactive] public bool OnlyInstalled { get; set; }
-
     [Reactive] public bool IncludeNSFW { get; set; }
 
     [Reactive] public bool IncludeUnofficial { get; set; }
@@ -145,7 +143,6 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
         });
 
         ResetFiltersCommand = ReactiveCommand.Create(() => {
-            OnlyInstalled = false;
             IncludeNSFW = false;
             IncludeUnofficial = false;
             Search = string.Empty;
@@ -170,7 +167,7 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
             LoadModLists().FireAndForget();
             LoadSettings().FireAndForget();
             
-            this.WhenAnyValue(x => x.IncludeNSFW, x => x.IncludeUnofficial, x => x.OnlyInstalled, x => x.GameType, x => x.SelectedSortOption)
+            this.WhenAnyValue(x => x.IncludeNSFW, x => x.IncludeUnofficial, x => x.GameType, x => x.SelectedSortOption)
                 .Subscribe(_ => SaveSettings().FireAndForget())
                 .DisposeWith(disposables);
 
@@ -186,14 +183,6 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
                                    item.Metadata.Tags.Contains(txt);
                 });
 
-            var onlyInstalledGamesFilter = this.ObservableForProperty(vm => vm.OnlyInstalled)
-                .Select(v => v.Value)
-                .Select<bool, Func<GalleryModListMetadataVM, bool>>(onlyInstalled =>
-                {
-                    if (onlyInstalled == false) return _ => true;
-                    return item => _locator.IsInstalled(item.Metadata.Game);
-                })
-                .StartWith(_ => true);
 
             var includeUnofficialFilter = this.ObservableForProperty(vm => vm.IncludeUnofficial)
                 .Select(v => v.Value)
@@ -291,7 +280,6 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
                               });
             _modLists.Connect()
                 .Filter(searchTextPredicates)
-                .Filter(onlyInstalledGamesFilter)
                 .Filter(includeUnofficialFilter)
                 .Filter(includeNSFWFilter)
                 .Filter(gameFilter)
@@ -332,7 +320,6 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
             GameType = GameType,
             IncludeNSFW = IncludeNSFW,
             IncludeUnofficial = IncludeUnofficial,
-            OnlyInstalled = OnlyInstalled,
             SortOption = SelectedSortOption,
         });
         _savingSettings = false;
@@ -347,7 +334,6 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
             SelectedGameTypeEntry = GameTypeEntries?.FirstOrDefault(gte => gte.GameIdentifier.Equals(s.GameType));
             IncludeNSFW = s.IncludeNSFW;
             IncludeUnofficial = s.IncludeUnofficial;
-            OnlyInstalled = s.OnlyInstalled;
             SelectedSortOption = s.SortOption;
             return Disposable.Empty;
         });
