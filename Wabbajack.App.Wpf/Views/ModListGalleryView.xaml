@@ -140,8 +140,38 @@
                         Background="{StaticResource ComplementaryPrimary08Brush}" />
                 </StackPanel>
 
+                <StackPanel Grid.Row="6" Orientation="Vertical" Margin="0, 24, 0, 0">
+                    <Label Margin="0, 0, 0, 4">Sort by</Label>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ComboBox
+                            x:Name="SortOptionComboBox"
+                            Grid.Row="0"
+                            Background="{StaticResource ComplementaryPrimary08Brush}"
+                            ToolTip="Select sorting criteria">
+                            <ComboBoxItem Content="Name" />
+                            <ComboBoxItem Content="Author" />
+                            <ComboBoxItem Content="Date Updated" />
+                            <ComboBoxItem Content="Date Created" />
+                            <ComboBoxItem Content="Install Size" />
+                        </ComboBox>
+                        <ComboBox
+                            x:Name="SortDirectionComboBox"
+                            Grid.Row="1"
+                            Margin="0, 8, 0, 0"
+                            Background="{StaticResource ComplementaryPrimary08Brush}"
+                            ToolTip="Select sorting direction">
+                            <ComboBoxItem Content="Ascending" />
+                            <ComboBoxItem Content="Descending" />
+                        </ComboBox>
+                    </Grid>
+                </StackPanel>
+
                 <CheckBox
-                    Grid.Row="6"
+                    Grid.Row="7"
                     x:Name="OnlyInstalledCheckbox"
                     Margin="0, 24, 0, 0"
                     VerticalAlignment="Center"
@@ -154,7 +184,7 @@
                 <local:WJButton
                     x:Name="ResetFiltersButton"
                     Margin="0, 24, 0, 0"
-                    Grid.Row="7"
+                    Grid.Row="8"
                     ToolTip="Reset filters to the default options"
                     VerticalAlignment="Bottom"
                     HorizontalAlignment="Stretch"

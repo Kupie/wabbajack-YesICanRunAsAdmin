@@ -74,6 +74,24 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
     [Reactive] public double MinModlistSize { get; set; }
     [Reactive] public double MaxModlistSize { get; set; }
 
+    public enum SortOption
+    {
+        Name,
+        Author,
+        DateUpdated,
+        DateCreated,
+        InstallSize
+    }
+
+    public enum SortDirection
+    {
+        Ascending,
+        Descending
+    }
+
+    [Reactive] public SortOption SelectedSortOption { get; set; } = SortOption.Name;
+    [Reactive] public SortDirection SelectedSortDirection { get; set; } = SortDirection.Ascending;
+
     public Dictionary<string, string> CommonlyWrongFormattedTags { get; set; } = new();
     [Reactive] public HashSet<ModListTag> AllTags { get; set; } = new();
     [Reactive] public ObservableCollection<ModListTag> HasTags { get; set; } = new();
@@ -142,6 +160,8 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
             SelectedGameTypeEntry = GameTypeEntries?.FirstOrDefault();
             HasTags = new ObservableCollection<ModListTag>();
             HasMods = new ObservableCollection<ModListMod>();
+            SelectedSortOption = SortOption.Name;
+            SelectedSortDirection = SortDirection.Ascending;
         });
 
         LoadLocalFileCommand = ReactiveCommand.Create(() =>
@@ -159,7 +179,7 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
             LoadModLists().FireAndForget();
             LoadSettings().FireAndForget();
             
-            this.WhenAnyValue(x => x.IncludeNSFW, x => x.IncludeUnofficial, x => x.OnlyInstalled, x => x.GameType)
+            this.WhenAnyValue(x => x.IncludeNSFW, x => x.IncludeUnofficial, x => x.OnlyInstalled, x => x.GameType, x => x.SelectedSortOption, x => x.SelectedSortDirection)
                 .Subscribe(_ => SaveSettings().FireAndForget())
                 .DisposeWith(disposables);
 
@@ -250,12 +270,45 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
                 .StartWith(_ => true);
                                 
 
-            var searchSorter = this.WhenValueChanged(vm => vm.Search)
-                                    .Throttle(searchThrottle, RxApp.MainThreadScheduler)
-                                    .Select(s => SortExpressionComparer<GalleryModListMetadataVM>
-                                                 .Descending(m => m.Metadata.Title.StartsWith(s ?? "", StringComparison.InvariantCultureIgnoreCase))
-                                                 .ThenByDescending(m => m.Metadata.Title.Contains(s ?? "", StringComparison.InvariantCultureIgnoreCase))
-                                                 .ThenByDescending(m => !m.IsBroken));
+            var sorter = this.WhenAnyValue(vm => vm.Search, vm => vm.SelectedSortOption, vm => vm.SelectedSortDirection)
+                              .Throttle(searchThrottle, RxApp.MainThreadScheduler)
+                              .Select(tuple =>
+                              {
+                                  var (searchText, sortOption, sortDirection) = tuple;
+                                  
+                                  if (!string.IsNullOrWhiteSpace(searchText))
+                                  {
+                                      // Search results are prioritized, then apply selected sorting
+                                      IComparer<GalleryModListMetadataVM> baseComparer = SortExpressionComparer<GalleryModListMetadataVM>
+                                          .Descending(m => m.Metadata.Title.StartsWith(searchText, StringComparison.InvariantCultureIgnoreCase))
+                                          .ThenByDescending(m => m.Metadata.Title.Contains(searchText, StringComparison.InvariantCultureIgnoreCase));
+                                          
+                                      baseComparer = sortOption switch
+                                      {
+                                          SortOption.Name => sortDirection == SortDirection.Ascending
+                                              ? baseComparer.ThenBy(m => m.Metadata.Title)
+                                              : baseComparer.ThenByDescending(m => m.Metadata.Title),
+                                          SortOption.Author => sortDirection == SortDirection.Ascending
+                                              ? baseComparer.ThenBy(m => m.Metadata.Author)
+                                              : baseComparer.ThenByDescending(m => m.Metadata.Author),
+                                          SortOption.DateUpdated => sortDirection == SortDirection.Ascending
+                                              ? baseComparer.ThenBy(m => m.Metadata.DateUpdated)
+                                              : baseComparer.ThenByDescending(m => m.Metadata.DateUpdated),
+                                          SortOption.DateCreated => sortDirection == SortDirection.Ascending
+                                              ? baseComparer.ThenBy(m => m.Metadata.DateCreated)
+                                              : baseComparer.ThenByDescending(m => m.Metadata.DateCreated),
+                                          SortOption.InstallSize => sortDirection == SortDirection.Ascending
+                                              ? baseComparer.ThenBy(m => m.Metadata.DownloadMetadata?.TotalSize ?? 0)
+                                              : baseComparer.ThenByDescending(m => m.Metadata.DownloadMetadata?.TotalSize ?? 0),
+                                          _ => baseComparer.ThenBy(m => m.Metadata.Title)
+                                      };
+                                      
+                                      return baseComparer.ThenByDescending(m => !m.IsBroken);
+                                  }
+                                  
+                                  return CreateSortComparer(sortOption, sortDirection)
+                                      .ThenByDescending(m => !m.IsBroken);
+                              });
             _modLists.Connect()
                 .Filter(searchTextPredicates)
                 .Filter(onlyInstalledGamesFilter)
@@ -266,7 +319,7 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
                 .Filter(maxModlistSizeFilter)
                 .Filter(includedTagsFilter)
                 .Filter(includedModsFilter)
-                .SortAndBind(out _filteredModLists, searchSorter)
+                .SortAndBind(out _filteredModLists, sorter)
                 .Subscribe(_ =>
                 {
                     if (!_filteringOnGame)
@@ -300,6 +353,8 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
             IncludeNSFW = IncludeNSFW,
             IncludeUnofficial = IncludeUnofficial,
             OnlyInstalled = OnlyInstalled,
+            SortOption = SelectedSortOption,
+            SortDirection = SelectedSortDirection,
         });
         _savingSettings = false;
     }
@@ -314,6 +369,8 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
             IncludeNSFW = s.IncludeNSFW;
             IncludeUnofficial = s.IncludeUnofficial;
             OnlyInstalled = s.OnlyInstalled;
+            SelectedSortOption = s.SortOption;
+            SelectedSortDirection = s.SortDirection;
             return Disposable.Empty;
         });
     }
@@ -403,5 +460,30 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
             .OrderBy(gte => gte.GameMetaData.HumanFriendlyGameName)
             .Prepend(GameTypeEntry.GetAllGamesEntry(ModLists.Count))
             .ToList());
+    }
+
+    private SortExpressionComparer<GalleryModListMetadataVM> CreateSortComparer(SortOption sortOption, SortDirection sortDirection)
+    {
+        var comparer = sortOption switch
+        {
+            SortOption.Name => sortDirection == SortDirection.Ascending
+                ? SortExpressionComparer<GalleryModListMetadataVM>.Ascending(m => m.Metadata.Title)
+                : SortExpressionComparer<GalleryModListMetadataVM>.Descending(m => m.Metadata.Title),
+            SortOption.Author => sortDirection == SortDirection.Ascending
+                ? SortExpressionComparer<GalleryModListMetadataVM>.Ascending(m => m.Metadata.Author)
+                : SortExpressionComparer<GalleryModListMetadataVM>.Descending(m => m.Metadata.Author),
+            SortOption.DateUpdated => sortDirection == SortDirection.Ascending
+                ? SortExpressionComparer<GalleryModListMetadataVM>.Ascending(m => m.Metadata.DateUpdated)
+                : SortExpressionComparer<GalleryModListMetadataVM>.Descending(m => m.Metadata.DateUpdated),
+            SortOption.DateCreated => sortDirection == SortDirection.Ascending
+                ? SortExpressionComparer<GalleryModListMetadataVM>.Ascending(m => m.Metadata.DateCreated)
+                : SortExpressionComparer<GalleryModListMetadataVM>.Descending(m => m.Metadata.DateCreated),
+            SortOption.InstallSize => sortDirection == SortDirection.Ascending
+                ? SortExpressionComparer<GalleryModListMetadataVM>.Ascending(m => m.Metadata.DownloadMetadata?.TotalSize ?? 0)
+                : SortExpressionComparer<GalleryModListMetadataVM>.Descending(m => m.Metadata.DownloadMetadata?.TotalSize ?? 0),
+            _ => SortExpressionComparer<GalleryModListMetadataVM>.Ascending(m => m.Metadata.Title)
+        };
+        
+        return comparer;
     }
 }
