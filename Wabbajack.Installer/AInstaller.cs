@@ -492,12 +492,28 @@ public abstract class AInstaller<T>
             }
         }
 
+        // Collect all game folders – primary plus other games
+        var gameFolders = new HashSet<AbsolutePath>();
+
+        void AddIfValid(AbsolutePath p)
+        {
+            if (p != default && p != AbsolutePath.Empty)
+                gameFolders.Add(p);
+        }
+
+        AddIfValid(_gameLocator.GameLocation(_configuration.Game));
+
+        foreach (var g in _configuration.OtherGames ?? Array.Empty<Game>())
+            AddIfValid(_gameLocator.GameLocation(g));
+
+        // Enumerate downloads + every game folder
         var allFiles = _configuration.Downloads.EnumerateFiles()
-            .Concat(_gameLocator.GameLocation(_configuration.Game).EnumerateFiles())
+            .Concat(gameFolders.SelectMany(p => p.EnumerateFiles()))
             .ToList();
 
         _logger.LogInformation("Getting archive sizes");
-        var hashDict = (await allFiles.PMapAllBatched(_limiter, x => (x, x.Size())).ToList())
+        var hashDict = (await allFiles.PMapAllBatched(_limiter,
+                                                      x => (x, x.Size())).ToList())
             .GroupBy(f => f.Item2)
             .ToDictionary(g => g.Key, g => g.Select(v => v.x));
 
@@ -506,7 +522,6 @@ public abstract class AInstaller<T>
             .SelectMany(a => hashDict[a.Size]).ToList();
 
         MaxStepProgress = toHash.Count;
-
         _logger.LogInformation("Found {count} total files, {hashedCount} matching filesize, {remainingCount} remaining to hash", 
             allFiles.Count, toHash.Count, ModList.Archives.Count(a => !HashedArchives.ContainsKey(a.Hash)));
 
@@ -538,6 +553,8 @@ public abstract class AInstaller<T>
             }
         }
     }
+
+
 
 
     /// <summary>
