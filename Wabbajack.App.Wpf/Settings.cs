@@ -103,7 +103,6 @@ public class GalleryFilterSettings
     public bool IncludeNSFW { get; set; }
     public bool IncludeUnofficial { get; set; }
     public bool OnlyInstalled { get; set; }
-    public ModListGalleryVM.SortOption SortOption { get; set; } = ModListGalleryVM.SortOption.Name;
-    public ModListGalleryVM.SortDirection SortDirection { get; set; } = ModListGalleryVM.SortDirection.Ascending;
+    public ModListGalleryVM.SortOption SortOption { get; set; } = ModListGalleryVM.SortOption.DateUpdated;
     public string Search { get; set; }
 }

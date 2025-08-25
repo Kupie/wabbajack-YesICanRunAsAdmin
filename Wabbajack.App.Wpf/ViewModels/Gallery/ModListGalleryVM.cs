@@ -79,18 +79,10 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
         Name,
         Author,
         DateUpdated,
-        DateCreated,
         InstallSize
     }
 
-    public enum SortDirection
-    {
-        Ascending,
-        Descending
-    }
-
-    [Reactive] public SortOption SelectedSortOption { get; set; } = SortOption.Name;
-    [Reactive] public SortDirection SelectedSortDirection { get; set; } = SortDirection.Ascending;
+    [Reactive] public SortOption SelectedSortOption { get; set; } = SortOption.DateUpdated;
 
     public Dictionary<string, string> CommonlyWrongFormattedTags { get; set; } = new();
     [Reactive] public HashSet<ModListTag> AllTags { get; set; } = new();
@@ -160,8 +152,7 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
             SelectedGameTypeEntry = GameTypeEntries?.FirstOrDefault();
             HasTags = new ObservableCollection<ModListTag>();
             HasMods = new ObservableCollection<ModListMod>();
-            SelectedSortOption = SortOption.Name;
-            SelectedSortDirection = SortDirection.Ascending;
+            SelectedSortOption = SortOption.DateUpdated;
         });
 
         LoadLocalFileCommand = ReactiveCommand.Create(() =>
@@ -179,7 +170,7 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
             LoadModLists().FireAndForget();
             LoadSettings().FireAndForget();
             
-            this.WhenAnyValue(x => x.IncludeNSFW, x => x.IncludeUnofficial, x => x.OnlyInstalled, x => x.GameType, x => x.SelectedSortOption, x => x.SelectedSortDirection)
+            this.WhenAnyValue(x => x.IncludeNSFW, x => x.IncludeUnofficial, x => x.OnlyInstalled, x => x.GameType, x => x.SelectedSortOption)
                 .Subscribe(_ => SaveSettings().FireAndForget())
                 .DisposeWith(disposables);
 
@@ -270,11 +261,11 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
                 .StartWith(_ => true);
                                 
 
-            var sorter = this.WhenAnyValue(vm => vm.Search, vm => vm.SelectedSortOption, vm => vm.SelectedSortDirection)
+            var sorter = this.WhenAnyValue(vm => vm.Search, vm => vm.SelectedSortOption)
                               .Throttle(searchThrottle, RxApp.MainThreadScheduler)
                               .Select(tuple =>
                               {
-                                  var (searchText, sortOption, sortDirection) = tuple;
+                                  var (searchText, sortOption) = tuple;
                                   
                                   if (!string.IsNullOrWhiteSpace(searchText))
                                   {
@@ -285,28 +276,17 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
                                           
                                       baseComparer = sortOption switch
                                       {
-                                          SortOption.Name => sortDirection == SortDirection.Ascending
-                                              ? baseComparer.ThenBy(m => m.Metadata.Title)
-                                              : baseComparer.ThenByDescending(m => m.Metadata.Title),
-                                          SortOption.Author => sortDirection == SortDirection.Ascending
-                                              ? baseComparer.ThenBy(m => m.Metadata.Author)
-                                              : baseComparer.ThenByDescending(m => m.Metadata.Author),
-                                          SortOption.DateUpdated => sortDirection == SortDirection.Ascending
-                                              ? baseComparer.ThenBy(m => m.Metadata.DateUpdated)
-                                              : baseComparer.ThenByDescending(m => m.Metadata.DateUpdated),
-                                          SortOption.DateCreated => sortDirection == SortDirection.Ascending
-                                              ? baseComparer.ThenBy(m => m.Metadata.DateCreated)
-                                              : baseComparer.ThenByDescending(m => m.Metadata.DateCreated),
-                                          SortOption.InstallSize => sortDirection == SortDirection.Ascending
-                                              ? baseComparer.ThenBy(m => m.Metadata.DownloadMetadata?.TotalSize ?? 0)
-                                              : baseComparer.ThenByDescending(m => m.Metadata.DownloadMetadata?.TotalSize ?? 0),
+                                          SortOption.Name => baseComparer.ThenBy(m => m.Metadata.Title),
+                                          SortOption.Author => baseComparer.ThenBy(m => m.Metadata.Author),
+                                          SortOption.DateUpdated => baseComparer.ThenByDescending(m => m.Metadata.DateUpdated),
+                                          SortOption.InstallSize => baseComparer.ThenByDescending(m => m.Metadata.DownloadMetadata?.TotalSize ?? 0),
                                           _ => baseComparer.ThenBy(m => m.Metadata.Title)
                                       };
                                       
                                       return baseComparer.ThenByDescending(m => !m.IsBroken);
                                   }
                                   
-                                  return CreateSortComparer(sortOption, sortDirection)
+                                  return CreateSortComparer(sortOption)
                                       .ThenByDescending(m => !m.IsBroken);
                               });
             _modLists.Connect()
@@ -354,7 +334,6 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
             IncludeUnofficial = IncludeUnofficial,
             OnlyInstalled = OnlyInstalled,
             SortOption = SelectedSortOption,
-            SortDirection = SelectedSortDirection,
         });
         _savingSettings = false;
     }
@@ -370,7 +349,6 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
             IncludeUnofficial = s.IncludeUnofficial;
             OnlyInstalled = s.OnlyInstalled;
             SelectedSortOption = s.SortOption;
-            SelectedSortDirection = s.SortDirection;
             return Disposable.Empty;
         });
     }
@@ -462,25 +440,14 @@ public class ModListGalleryVM : BackNavigatingVM, ICanLoadLocalFileVM
             .ToList());
     }
 
-    private SortExpressionComparer<GalleryModListMetadataVM> CreateSortComparer(SortOption sortOption, SortDirection sortDirection)
+    private SortExpressionComparer<GalleryModListMetadataVM> CreateSortComparer(SortOption sortOption)
     {
         var comparer = sortOption switch
         {
-            SortOption.Name => sortDirection == SortDirection.Ascending
-                ? SortExpressionComparer<GalleryModListMetadataVM>.Ascending(m => m.Metadata.Title)
-                : SortExpressionComparer<GalleryModListMetadataVM>.Descending(m => m.Metadata.Title),
-            SortOption.Author => sortDirection == SortDirection.Ascending
-                ? SortExpressionComparer<GalleryModListMetadataVM>.Ascending(m => m.Metadata.Author)
-                : SortExpressionComparer<GalleryModListMetadataVM>.Descending(m => m.Metadata.Author),
-            SortOption.DateUpdated => sortDirection == SortDirection.Ascending
-                ? SortExpressionComparer<GalleryModListMetadataVM>.Ascending(m => m.Metadata.DateUpdated)
-                : SortExpressionComparer<GalleryModListMetadataVM>.Descending(m => m.Metadata.DateUpdated),
-            SortOption.DateCreated => sortDirection == SortDirection.Ascending
-                ? SortExpressionComparer<GalleryModListMetadataVM>.Ascending(m => m.Metadata.DateCreated)
-                : SortExpressionComparer<GalleryModListMetadataVM>.Descending(m => m.Metadata.DateCreated),
-            SortOption.InstallSize => sortDirection == SortDirection.Ascending
-                ? SortExpressionComparer<GalleryModListMetadataVM>.Ascending(m => m.Metadata.DownloadMetadata?.TotalSize ?? 0)
-                : SortExpressionComparer<GalleryModListMetadataVM>.Descending(m => m.Metadata.DownloadMetadata?.TotalSize ?? 0),
+            SortOption.Name => SortExpressionComparer<GalleryModListMetadataVM>.Ascending(m => m.Metadata.Title),
+            SortOption.Author => SortExpressionComparer<GalleryModListMetadataVM>.Ascending(m => m.Metadata.Author),
+            SortOption.DateUpdated => SortExpressionComparer<GalleryModListMetadataVM>.Descending(m => m.Metadata.DateUpdated),
+            SortOption.InstallSize => SortExpressionComparer<GalleryModListMetadataVM>.Descending(m => m.Metadata.DownloadMetadata?.TotalSize ?? 0),
             _ => SortExpressionComparer<GalleryModListMetadataVM>.Ascending(m => m.Metadata.Title)
         };
         
