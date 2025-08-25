@@ -4,7 +4,10 @@
 
 Wabbajack, but **UNLOCKED**
 
-Nexus mods will **automatically download** without requiring Premium, all **game folder validation** is disabled (You can even install modlists without having the game at all), and [ModHQ](https://modhq.org/) is whitelisted as a trusted domain.
+- **Auto-Installation** for non-premium Nexus users
+- Manually set your game folder location
+- Game folder integreity checks DISABLED
+
 
 ## License & Copyright
 
