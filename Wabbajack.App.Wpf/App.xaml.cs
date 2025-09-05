@@ -46,7 +46,7 @@ public partial class App
 
     private void OnStartup(object sender, StartupEventArgs e)
     {
-        if (IsAdmin())
+        if (false)
         {
             var messageBox = MessageBox.Show("Don't run Wabbajack as Admin!", "Error", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.OK, MessageBoxOptions.DefaultDesktopOnly);
             if (messageBox == MessageBoxResult.OK)
