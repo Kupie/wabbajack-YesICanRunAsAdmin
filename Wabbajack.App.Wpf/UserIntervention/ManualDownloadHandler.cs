@@ -38,7 +38,9 @@ public class ManualDownloadHandler : BrowserWindowViewModel
                         
                         // If not found by ID, try finding by text content
                         if (!slowButton) {
-                            var buttons = document.querySelectorAll('button');
+                            const host = document.querySelector('mod-file-download');
+                            const shadow = host.shadowRoot;
+                            var buttons = shadow.querySelectorAll('button');
                             for (var i = 0; i < buttons.length; i++) {
                                 if (buttons[i].innerText.trim().toLowerCase() === 'slow download' || 
                                     buttons[i].textContent.trim().toLowerCase() === 'slow download' ||
